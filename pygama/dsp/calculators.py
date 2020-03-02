@@ -10,6 +10,19 @@ warnings.filterwarnings(action="ignore", module="numpy.ma", category=np.RankWarn
 warnings.filterwarnings(action="ignore", category=RuntimeWarning)
 
 
+def fS(waves, calcs, wfin="wf_trap", calc="fS"):
+    """
+    grab first ADC sample of each trap-filtered waveform
+    """
+    wfs = waves[wfin]
+
+    # grab first samle
+    first_sample = wfs[:, 0]
+
+    # add the result as a new column
+    calcs[calc] = first_sample
+
+
 def avg_bl(waves, calcs, ilo=0, ihi=500, wfin="waveform", calc="bl_p0", test=False):
     """
     simple mean, vectorized baseline calculator
@@ -141,7 +154,7 @@ def get_max(waves, calcs, wfin="wf_trap", calc="trap_max", test=False):
 
     maxes = np.amax(wfs, axis=1)
     imaxes = np.argmax(wfs, axis=1)
-    
+
     cname = wfin.split("_")[-1]
     calcs["{}_max".format(cname)] = maxes
     calcs["{}_imax".format(cname)] = imaxes
@@ -175,6 +188,44 @@ def get_max(waves, calcs, wfin="wf_trap", calc="trap_max", test=False):
             plt.show(block=False)
             plt.pause(0.01)
 
+def get_zacmax(waves, calcs, wfin="wf_zac", calc="zac_max", test=False):
+    """
+    calculate maxima of each row of a waveform block
+    creates two columns:  max value and index of maximum.
+    """
+    wfs = waves[wfin]
+    clk = waves["settings"]["clk"]  # Hz
+    
+    maxes = np.amax(wfs, axis=1)
+    imaxes = np.argmax(wfs, axis=1)
+    
+    cname = wfin.split("_")[-1]
+    calcs["{}_max".format(cname)] = maxes
+    calcs["{}_imax".format(cname)] = imaxes
+    
+    if test:
+        iwf = 2
+        while True:
+            if iwf != 2:
+                inp = input()
+                if inp == "q": exit()
+                if inp == "p": iwf -= 2
+                if inp.isdigit(): iwf = int(inp) - 1
+            iwf += 1
+            print(iwf)
+            print("zac max = ",maxes[iwf])
+            print("zac max position = ", imaxes[iwf])
+            plt.cla()
+            wf, ts = wfs[iwf], np.arange(wfs[iwf].shape[0])
+            plt.plot(ts, wfs[iwf], '-k', label=wfin)
+            plt.plot(ts[imaxes[iwf]], maxes[iwf], ".m", ms=20, label="max")
+            plt.xlabel("clock ticks", ha='right', x=1)
+            plt.ylabel('ADC', ha='right', y=1)
+            plt.legend()
+            plt.tight_layout()
+            plt.show(block=False)
+            plt.pause(0.01)
+            
 
 def timepoint(waves, calcs, pct, wfin="wf_savgol", calc="tp", test=False):
     """
@@ -322,7 +373,7 @@ def ftp(waves, calcs, wf1="wf_etrap", wf2="wf_atrap", test=False):
 
             plt.xlabel("clock ticks", ha='right', x=1)
             plt.ylabel("ADC", ha='right', y=1)
-            plt.legend(loc=2)
+            plt.legend(loc=2, fontsize=12)
             plt.tight_layout()
             plt.show(block=False)
             plt.pause(0.001)
@@ -652,6 +703,33 @@ def drift_time(waves, calcs, test=False):
     could maybe also try a np polyfit to roughly
     estimate the curvature? idk, maybe simpler is better
     """
+    wfs = waves[wfin]
+    t0 = calcs['t0']
+    energy = calcs['e_ftp']
+
+    if test:
+
+        iwf = 0
+        while True:
+            if iwf != 2:
+                inp = input()
+                if inp == "q": exit()
+
+
+
+        xvals = np.arange(0,3000)
+        start = time.time()
+
+        plt.plot(xvals, wfs[iwf], lw=1)
+        plt.vlines(t0[i], np.amin(wfs[i]), np.amax(wfs[i]), color='r', linewidth=1.5)
+        plt.hlines(energy[i], 0, 3000, color='r', linewidth=1.5, zorder=10)
+        plt.xlabel('Sample Number', ha='right', x=1.0)
+        plt.ylabel('ADC Value', ha='right', y=1.0)
+        plt.tight_layout()
+        plt.show()
+
+        iwf += 1
+
     print("hi clint")
 
 
